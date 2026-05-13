@@ -1,11 +1,15 @@
 package com.example.sicedroidmultiplatform.data.models
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class LoginResult(
     val acceso: Boolean,
     val mensaje: String,
     val rawResponse: String? = null
 )
 
+@Serializable
 data class AlumnoProfile(
     val matricula: String = "",
     val nombre: String = "",
@@ -26,6 +30,7 @@ data class AlumnoProfile(
     val rawJson: String = ""
 )
 
+@Serializable
 data class CargaItem(
     val Materia: String = "",
     val Grupo: String = "",
@@ -38,6 +43,7 @@ data class CargaItem(
     val Viernes: String = "",
 )
 
+@Serializable
 data class KardexItem(
     val clvOficial: String = "",
     val materia: String = "",
@@ -45,12 +51,14 @@ data class KardexItem(
     val promedio: String = ""
 )
 
+@Serializable
 data class CalifUnidadItem(
     val Materia: String = "",
     val unidades: Map<Int, String> = emptyMap(),
     val Grupo: String = ""
 )
 
+@Serializable
 data class CalifFinalItem(
     val materia: String = "",
     val calif: String = "",

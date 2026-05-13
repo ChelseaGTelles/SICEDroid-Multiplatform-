@@ -9,5 +9,5 @@ interface InterfaceRepository {
     suspend fun getCalifUnidadesByAlumno(): Result<List<CalifUnidadItem>>
     suspend fun getAllKardexConPromedioByAlumno(aluLineamiento: Int): Result<List<KardexItem>>
     suspend fun getCargaAcademicaByAlumno(): Result<List<CargaItem>>
-    fun logout()
+    suspend fun logout()
 }

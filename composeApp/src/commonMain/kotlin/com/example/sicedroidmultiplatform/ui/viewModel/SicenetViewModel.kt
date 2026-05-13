@@ -1,10 +1,6 @@
 package com.example.sicedroidmultiplatform.ui.viewModel
 
-import com.example.sicedroidmultiplatform.data.models.AlumnoProfile
-import com.example.sicedroidmultiplatform.data.models.CalifFinalItem
-import com.example.sicedroidmultiplatform.data.models.CalifUnidadItem
-import com.example.sicedroidmultiplatform.data.models.CargaItem
-import com.example.sicedroidmultiplatform.data.models.KardexItem
+import com.example.sicedroidmultiplatform.data.models.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -13,9 +9,14 @@ sealed class SicenetUiState {
     object Idle : SicenetUiState()
 
     object Loading : SicenetUiState()
-    object Success : SicenetUiState()
 
-    data class Error(val message: String) : SicenetUiState()
+    data class Success(
+        val loginResult: LoginResult
+    ) : SicenetUiState()
+
+    data class Error(
+        val message: String
+    ) : SicenetUiState()
 
     data class ProfileLoaded(
         val profile: AlumnoProfile,
@@ -47,6 +48,7 @@ sealed class SicenetUiState {
         val fromCache: Boolean = false
     ) : SicenetUiState()
 }
+
 class SicenetViewModel {
 
     private val _uiState =
@@ -59,52 +61,116 @@ class SicenetViewModel {
     fun login(
         matricula: String,
         contrasenia: String,
-        userType: String
+        tipoUsuario: String
     ) {
+
+        _uiState.value = SicenetUiState.Loading
 
         if (
             matricula.isNotEmpty() &&
             contrasenia.isNotEmpty()
         ) {
+
             _uiState.value =
-                SicenetUiState.Success
+                SicenetUiState.Success(
+                    LoginResult(
+                        acceso = true,
+                        mensaje = "Login correcto"
+                    )
+                )
+
         } else {
+
             _uiState.value =
                 SicenetUiState.Error(
-                    "Campos vacíos"
+                    "Llena todos los campos"
                 )
         }
     }
 
-    fun getProfile() {
-
-        _uiState.value =
-            SicenetUiState.ProfileLoaded(
-                com.example.sicedroidmultiplatform.data.models.AlumnoProfile(
-                    matricula = "22100001",
-                    nombre = "Andrea",
-                    carrera = "Ingeniería en Sistemas",
-                    especialidad = "Desarrollo Web",
-                    semActual = "6",
-                    cdtosAcumulados = "210",
-                    cdtosActuales = "36",
-                    fechaReins = "2026-05-13",
-                    adeudo = false,
-                    inscrito = true
-                )
-            )
+    fun logout() {
+        _uiState.value = SicenetUiState.Idle
     }
 
-    fun getCarga() {}
+    fun getProfile() {
 
-    fun getKardex(lineamiento: Int) {}
+        val profile = AlumnoProfile(
+            matricula = "22100000",
+            nombre = "Alumno Demo",
+            carrera = "Ingeniería",
+            especialidad = "Sistemas",
+            semActual = "6",
+            cdtosAcumulados = "180",
+            cdtosActuales = "32",
+            fechaReins = "10/05/2026",
+            adeudo = false,
+            inscrito = true
+        )
 
-    fun getCalifUnidades() {}
-
-    fun getCalifFinales(modEducativo: Int) {}
-
-    fun logout() {
         _uiState.value =
-            SicenetUiState.Idle
+            SicenetUiState.ProfileLoaded(profile)
+    }
+
+    fun getCarga() {
+
+        val items = listOf(
+            CargaItem(
+                Materia = "Programación",
+                Grupo = "A",
+                Docente = "Profesor Demo",
+                CreditosMateria = 5
+            )
+        )
+
+        _uiState.value =
+            SicenetUiState.CargaLoaded(items)
+    }
+
+    fun getKardex(lineamiento: Int) {
+
+        val items = listOf(
+            KardexItem(
+                clvOficial = "SCC-101",
+                materia = "Estructuras",
+                periodo = "3",
+                promedio = "95"
+            )
+        )
+
+        _uiState.value =
+            SicenetUiState.KardexLoaded(items)
+    }
+
+    fun getCalifUnidades() {
+
+        val items = listOf(
+            CalifUnidadItem(
+                Materia = "Matemáticas",
+                Grupo = "A",
+                unidades = mapOf(
+                    1 to "90",
+                    2 to "85",
+                    3 to "100"
+                )
+            )
+        )
+
+        _uiState.value =
+            SicenetUiState.UnidadesLoaded(items)
+    }
+
+    fun getCalifFinales(modEducativo: Int) {
+
+        val items = listOf(
+            CalifFinalItem(
+                materia = "Programación Móvil",
+                calif = "95",
+                acred = "Sí",
+                grupo = "A"
+            )
+        )
+
+        _uiState.value =
+            SicenetUiState.FinalesLoaded(items)
     }
 }

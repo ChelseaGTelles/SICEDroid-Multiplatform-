@@ -48,6 +48,13 @@ kotlin {
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+
+
+            implementation("io.ktor:ktor-client-core:3.1.3")
+            implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
+
+            implementation("io.ktor:ktor-client-cio:3.1.3")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

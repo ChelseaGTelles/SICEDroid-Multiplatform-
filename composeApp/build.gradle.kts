@@ -34,6 +34,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation("io.ktor:ktor-client-okhttp:3.1.3")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -54,7 +55,19 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
 
-            implementation("io.ktor:ktor-client-cio:3.1.3")
+            implementation("io.ktor:ktor-client-logging:3.1.3")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-js:3.1.3")
+            }
+        }
+        val wasmJsMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-js:3.1.3")
+            }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -62,6 +75,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation("io.ktor:ktor-client-cio:3.1.3")
         }
     }
 }

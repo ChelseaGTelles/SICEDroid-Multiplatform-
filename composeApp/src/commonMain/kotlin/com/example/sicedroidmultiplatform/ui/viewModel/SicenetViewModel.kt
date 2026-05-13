@@ -3,6 +3,13 @@ package com.example.sicedroidmultiplatform.ui.viewModel
 import com.example.sicedroidmultiplatform.data.models.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.example.sicedroidmultiplatform.data.repository.InterfaceRepository
+import com.example.sicedroidmultiplatform.data.repository.SicenetRepository
+import com.example.sicedroidmultiplatform.data.AccesoLoginRequest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 sealed class SicenetUiState {
 
@@ -49,7 +56,9 @@ sealed class SicenetUiState {
     ) : SicenetUiState()
 }
 
-class SicenetViewModel {
+class SicenetViewModel(
+    private val repository: InterfaceRepository = SicenetRepository()
+) {
 
     private val _uiState =
         MutableStateFlow<SicenetUiState>(
@@ -57,6 +66,9 @@ class SicenetViewModel {
         )
 
     val uiState = _uiState.asStateFlow()
+    private val scope = CoroutineScope(
+        Dispatchers.Main + SupervisorJob()
+    )
 
     fun login(
         matricula: String,
@@ -64,27 +76,51 @@ class SicenetViewModel {
         tipoUsuario: String
     ) {
 
-        _uiState.value = SicenetUiState.Loading
+        scope.launch {
 
-        if (
-            matricula.isNotEmpty() &&
-            contrasenia.isNotEmpty()
-        ) {
+            _uiState.value = SicenetUiState.Loading
 
-            _uiState.value =
-                SicenetUiState.Success(
-                    LoginResult(
-                        acceso = true,
-                        mensaje = "Login correcto"
+            try {
+
+                val result = repository.accesoLogin(
+                    AccesoLoginRequest(
+                        matricula,
+                        contrasenia,
+                        tipoUsuario
                     )
                 )
 
-        } else {
+                result.onSuccess { login ->
 
-            _uiState.value =
-                SicenetUiState.Error(
-                    "Llena todos los campos"
-                )
+                    if (login.acceso) {
+
+                        _uiState.value =
+                            SicenetUiState.Success(login)
+
+                    } else {
+
+                        _uiState.value =
+                            SicenetUiState.Error(
+                                login.mensaje
+                            )
+                    }
+                }
+
+                result.onFailure {
+
+                    _uiState.value =
+                        SicenetUiState.Error(
+                            it.message ?: "Error desconocido"
+                        )
+                }
+
+            } catch (e: Exception) {
+
+                _uiState.value =
+                    SicenetUiState.Error(
+                        e.message ?: "Error"
+                    )
+            }
         }
     }
 

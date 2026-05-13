@@ -1,12 +1,10 @@
 package com.example.sicedroidmultiplatform.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +21,6 @@ import com.example.sicedroidmultiplatform.ui.viewModel.SicenetUiState
 @Composable
 fun PerfilScreen(viewModel: SicenetViewModel, onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
-    var showMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (uiState !is SicenetUiState.ProfileLoaded) {
@@ -41,44 +38,6 @@ fun PerfilScreen(viewModel: SicenetViewModel, onNavigate: (String) -> Unit, onLo
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Cerrar Sesión",
                             tint = Color.White
-                        )
-                    }
-                    
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Menú", tint = Color.White)
-                    }
-
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Calificaciones Por Unidad") },
-                            onClick = {
-                                showMenu = false
-                                onNavigate("calificaciones_unidad")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Calificaciones Finales") },
-                            onClick = {
-                                showMenu = false
-                                onNavigate("calificaciones_finales")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Kardex") },
-                            onClick = {
-                                showMenu = false
-                                onNavigate("kardex")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Carga Académica") },
-                            onClick = {
-                                showMenu = false
-                                onNavigate("carga_academica")
-                            }
                         )
                     }
                 },
@@ -106,20 +65,6 @@ fun PerfilScreen(viewModel: SicenetViewModel, onNavigate: (String) -> Unit, onLo
                         }
                     }
                     is SicenetUiState.ProfileLoaded -> {
-                        /*if (state.fromCache && !state.lastUpdated.isNullOrEmpty()) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9C4))
-                            ) {
-                                Text(
-                                    text = "Datos guardados, última actualización: ${state.lastUpdated}",
-                                    modifier = Modifier.padding(12.dp),
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF827717)
-                                )
-                            }
-                        }*/
-
                         ProfileDataDisplay(state.profile)
                     }
                     is SicenetUiState.Error -> {

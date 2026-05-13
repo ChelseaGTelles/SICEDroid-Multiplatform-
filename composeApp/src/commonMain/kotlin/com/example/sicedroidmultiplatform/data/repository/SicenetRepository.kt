@@ -95,9 +95,126 @@ class SicenetRepository : InterfaceRepository {
         }
     }
 
-    /**
-     * Extrae el contenido de una etiqueta XML, manejando opcionalmente CDATA y decodificando entidades HTML.
-     */
+    override suspend fun getAllCalifFinalByAlumnos(modEducativo: Int): Result<List<CalifFinalItem>> {
+        return try {
+            ensureSession()
+            val soapBody = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getAllCalifFinalByAlumnos xmlns="http://tempuri.org/" />
+                  </soap:Body>
+                </soap:Envelope>
+            """.trimIndent()
+
+            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+                header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
+                header("SOAPAction", "http://tempuri.org/getAllCalifFinalByAlumnos")
+                setBody(soapBody)
+            }.body()
+
+            val jsonString = extractTagContent(response, "getAllCalifFinalByAlumnosResult")
+            if (jsonString.isNotBlank()) {
+                val items = jsonParser.decodeFromString<List<CalifFinalItem>>(jsonString)
+                Result.success(items)
+            } else {
+                Result.success(emptyList())
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getCalifUnidadesByAlumno(): Result<List<CalifUnidadItem>> {
+        return try {
+            ensureSession()
+            val soapBody = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getCalifUnidadesByAlumno xmlns="http://tempuri.org/" />
+                  </soap:Body>
+                </soap:Envelope>
+            """.trimIndent()
+
+            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+                header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
+                header("SOAPAction", "http://tempuri.org/getCalifUnidadesByAlumno")
+                setBody(soapBody)
+            }.body()
+
+            val jsonString = extractTagContent(response, "getCalifUnidadesByAlumnoResult")
+            if (jsonString.isNotBlank()) {
+                val items = jsonParser.decodeFromString<List<CalifUnidadItem>>(jsonString)
+                Result.success(items)
+            } else {
+                Result.success(emptyList())
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getAllKardexConPromedioByAlumno(aluLineamiento: Int): Result<List<KardexItem>> {
+        return try {
+            ensureSession()
+            val soapBody = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getAllKardexConPromedioByAlumno xmlns="http://tempuri.org/" />
+                  </soap:Body>
+                </soap:Envelope>
+            """.trimIndent()
+
+            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+                header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
+                header("SOAPAction", "http://tempuri.org/getAllKardexConPromedioByAlumno")
+                setBody(soapBody)
+            }.body()
+
+            val jsonString = extractTagContent(response, "getAllKardexConPromedioByAlumnoResult")
+            if (jsonString.isNotBlank()) {
+                val items = jsonParser.decodeFromString<List<KardexItem>>(jsonString)
+                Result.success(items)
+            } else {
+                Result.success(emptyList())
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getCargaAcademicaByAlumno(): Result<List<CargaItem>> {
+        return try {
+            ensureSession()
+            val soapBody = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getCargaAcademicaByAlumno xmlns="http://tempuri.org/" />
+                  </soap:Body>
+                </soap:Envelope>
+            """.trimIndent()
+
+            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+                header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
+                header("SOAPAction", "http://tempuri.org/getCargaAcademicaByAlumno")
+                setBody(soapBody)
+            }.body()
+
+            val jsonString = extractTagContent(response, "getCargaAcademicaByAlumnoResult")
+            if (jsonString.isNotBlank()) {
+                val items = jsonParser.decodeFromString<List<CargaItem>>(jsonString)
+                Result.success(items)
+            } else {
+                Result.success(emptyList())
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun extractTagContent(xml: String, tagName: String): String {
         var content = xml.substringAfter("<$tagName>", "")
             .substringBefore("</$tagName>", "")
@@ -118,53 +235,15 @@ class SicenetRepository : InterfaceRepository {
 
     override suspend fun logout() {
         isWarmedUp = false
-
         try {
             val url = Url("https://sicenet.surguanajuato.tecnm.mx")
             val cookies = HttpClientFactory.cookieStorage.get(url)
-
             cookies.forEach { cookie ->
                 HttpClientFactory.cookieStorage.addCookie(
                     url,
                     cookie.copy(expires = GMTDate(0))
                 )
             }
-        } catch (e: Exception) {
-            // Ignorar errores
-        }
-    }
-
-    override suspend fun getAllCalifFinalByAlumnos(
-        modEducativo: Int
-    ): Result<List<CalifFinalItem>> {
-
-        return Result.failure(
-            Exception("Aún no implementado")
-        )
-    }
-
-    override suspend fun getCalifUnidadesByAlumno():
-            Result<List<CalifUnidadItem>> {
-
-        return Result.failure(
-            Exception("Aún no implementado")
-        )
-    }
-
-    override suspend fun getAllKardexConPromedioByAlumno(
-        aluLineamiento: Int
-    ): Result<List<KardexItem>> {
-
-        return Result.failure(
-            Exception("Aún no implementado")
-        )
-    }
-
-    override suspend fun getCargaAcademicaByAlumno():
-            Result<List<CargaItem>> {
-
-        return Result.failure(
-            Exception("Aún no implementado")
-        )
+        } catch (e: Exception) {}
     }
 }

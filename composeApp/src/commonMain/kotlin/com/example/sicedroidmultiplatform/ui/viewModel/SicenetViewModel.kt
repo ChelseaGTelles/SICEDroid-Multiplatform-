@@ -52,23 +52,29 @@ class SicenetViewModel(
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     fun login(matricula: String, contrasenia: String, tipoUsuario: String) {
+        if (matricula.isBlank() || contrasenia.isBlank()) {
+            _uiState.value = SicenetUiState.Error("Matrícula y contraseña son requeridas")
+            return
+        }
+
         scope.launch {
             _uiState.value = SicenetUiState.Loading
             try {
                 val result = repository.accesoLogin(
                     AccesoLoginRequest(matricula, contrasenia, tipoUsuario)
                 )
+                
                 result.onSuccess { login ->
                     if (login.acceso) {
                         _uiState.value = SicenetUiState.Success(login)
                     } else {
-                        _uiState.value = SicenetUiState.Error(login.mensaje)
+                        _uiState.value = SicenetUiState.Error(login.mensaje ?: "Credenciales incorrectas")
                     }
-                }.onFailure {
-                    _uiState.value = SicenetUiState.Error(it.message ?: "Error desconocido")
+                }.onFailure { e ->
+                    _uiState.value = SicenetUiState.Error("Error de red: ${e.message}")
                 }
             } catch (e: Exception) {
-                _uiState.value = SicenetUiState.Error(e.message ?: "Error")
+                _uiState.value = SicenetUiState.Error("Excepción: ${e.message}")
             }
         }
     }
@@ -83,17 +89,80 @@ class SicenetViewModel(
     fun getProfile() {
         scope.launch {
             _uiState.value = SicenetUiState.Loading
-            val result = repository.getAlumno()
-            result.onSuccess { profile ->
-                _uiState.value = SicenetUiState.ProfileLoaded(profile)
-            }.onFailure { error ->
-                _uiState.value = SicenetUiState.Error(error.message ?: "Error al cargar perfil")
+            try {
+                val result = repository.getAlumno()
+                result.onSuccess { profile ->
+                    _uiState.value = SicenetUiState.ProfileLoaded(profile)
+                }.onFailure { error ->
+                    _uiState.value = SicenetUiState.Error(error.message ?: "Error al cargar perfil")
+                }
+            } catch (e: Exception) {
+                _uiState.value = SicenetUiState.Error(e.message ?: "Error inesperado")
             }
         }
     }
 
-    fun getCarga() { _uiState.value = SicenetUiState.CargaLoaded(emptyList()) }
-    fun getKardex(lineamiento: Int) { _uiState.value = SicenetUiState.KardexLoaded(emptyList()) }
-    fun getCalifUnidades() { _uiState.value = SicenetUiState.UnidadesLoaded(emptyList()) }
-    fun getCalifFinales(modEducativo: Int) { _uiState.value = SicenetUiState.FinalesLoaded(emptyList()) }
+    fun getCarga() {
+        scope.launch {
+            _uiState.value = SicenetUiState.Loading
+            try {
+                val result = repository.getCargaAcademicaByAlumno()
+                result.onSuccess { items ->
+                    _uiState.value = SicenetUiState.CargaLoaded(items)
+                }.onFailure { error ->
+                    _uiState.value = SicenetUiState.Error(error.message ?: "Error al cargar carga académica")
+                }
+            } catch (e: Exception) {
+                _uiState.value = SicenetUiState.Error(e.message ?: "Error inesperado")
+            }
+        }
+    }
+
+    fun getKardex(lineamiento: Int) {
+        scope.launch {
+            _uiState.value = SicenetUiState.Loading
+            try {
+                val result = repository.getAllKardexConPromedioByAlumno(lineamiento)
+                result.onSuccess { items ->
+                    _uiState.value = SicenetUiState.KardexLoaded(items)
+                }.onFailure { error ->
+                    _uiState.value = SicenetUiState.Error(error.message ?: "Error al cargar kardex")
+                }
+            } catch (e: Exception) {
+                _uiState.value = SicenetUiState.Error(e.message ?: "Error inesperado")
+            }
+        }
+    }
+
+    fun getCalifUnidades() {
+        scope.launch {
+            _uiState.value = SicenetUiState.Loading
+            try {
+                val result = repository.getCalifUnidadesByAlumno()
+                result.onSuccess { items ->
+                    _uiState.value = SicenetUiState.UnidadesLoaded(items)
+                }.onFailure { error ->
+                    _uiState.value = SicenetUiState.Error(error.message ?: "Error al cargar calificaciones por unidad")
+                }
+            } catch (e: Exception) {
+                _uiState.value = SicenetUiState.Error(e.message ?: "Error inesperado")
+            }
+        }
+    }
+
+    fun getCalifFinales(modEducativo: Int) {
+        scope.launch {
+            _uiState.value = SicenetUiState.Loading
+            try {
+                val result = repository.getAllCalifFinalByAlumnos(modEducativo)
+                result.onSuccess { items ->
+                    _uiState.value = SicenetUiState.FinalesLoaded(items)
+                }.onFailure { error ->
+                    _uiState.value = SicenetUiState.Error(error.message ?: "Error al cargar calificaciones finales")
+                }
+            } catch (e: Exception) {
+                _uiState.value = SicenetUiState.Error(e.message ?: "Error inesperado")
+            }
+        }
+    }
 }

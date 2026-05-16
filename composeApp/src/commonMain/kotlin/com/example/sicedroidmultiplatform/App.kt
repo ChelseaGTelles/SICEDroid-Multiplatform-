@@ -8,10 +8,7 @@ import com.example.sicedroidmultiplatform.ui.nav.SicenetApp
 @Composable
 @Preview
 fun App() {
-
     MaterialTheme {
-
         SicenetApp()
-
     }
 }

@@ -10,6 +10,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.sicedroidmultiplatform.createDatabase
+import com.example.sicedroidmultiplatform.data.repository.LocalRepository
+import com.example.sicedroidmultiplatform.data.repository.SicenetRepository
 import com.example.sicedroidmultiplatform.ui.components.SicenetBottomBar
 import com.example.sicedroidmultiplatform.ui.screens.*
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetViewModel
@@ -17,7 +20,15 @@ import com.example.sicedroidmultiplatform.ui.viewModel.SicenetViewModel
 @Composable
 fun SicenetApp() {
     val navController = rememberNavController()
-    val viewModel = remember { SicenetViewModel() }
+    
+    // Inicializamos la base de datos y los repositorios
+    val viewModel = remember {
+        val database = createDatabase()
+        val localRepo = LocalRepository(database)
+        val mainRepo = SicenetRepository(localRepo)
+        // Corregido: Pasamos ambos repositorios para habilitar el modo offline
+        SicenetViewModel(mainRepo, localRepo)
+    }
     
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route

@@ -1,5 +1,6 @@
 package com.example.sicedroidmultiplatform.data.repository
 
+import com.example.sicedroidmultiplatform.getPlatform
 import com.example.sicedroidmultiplatform.data.AccesoLoginRequest
 import com.example.sicedroidmultiplatform.data.models.*
 import com.example.sicedroidmultiplatform.data.network.HttpClientFactory
@@ -10,9 +11,14 @@ import io.ktor.util.date.*
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.delay
 
-class SicenetRepository : InterfaceRepository {
+class SicenetRepository(
+    private val localRepository: LocalRepository
+) : InterfaceRepository {
     private val client = HttpClientFactory.client
     private var isWarmedUp = false
+
+    private val baseUrl = if (getPlatform().name.contains("Web")) "/api-sicenet" else "https://sicenet.surguanajuato.tecnm.mx"
+    private val serviceUrl = "$baseUrl/ws/wsalumnos.asmx"
 
     private val jsonParser = Json {
         ignoreUnknownKeys = true
@@ -22,10 +28,12 @@ class SicenetRepository : InterfaceRepository {
     private suspend fun ensureSession() {
         if (isWarmedUp) return
         try {
-            client.get("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx")
+            client.get(serviceUrl)
             isWarmedUp = true
             delay(500)
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            // No propagamos el error aquí, permitimos que el post falle si no hay red
+        }
     }
 
     override suspend fun accesoLogin(request: AccesoLoginRequest): Result<LoginResult> {
@@ -45,7 +53,7 @@ class SicenetRepository : InterfaceRepository {
                 </soap:Envelope>
             """.trimIndent()
 
-            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+            val response: String = client.post(serviceUrl) {
                 header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
                 header("SOAPAction", "http://tempuri.org/accesoLogin")
                 setBody(soapBody)
@@ -55,12 +63,20 @@ class SicenetRepository : InterfaceRepository {
             val isSuccess = resultText.contains("\"acceso\":true") || resultText == "1"
 
             if (isSuccess) {
+                localRepository.saveSession(request.strMatricula, request.strContrasenia, request.tipoUsuario)
                 Result.success(LoginResult(acceso = true, mensaje = "Login correcto"))
             } else {
                 Result.success(LoginResult(acceso = false, mensaje = "Matrícula o contraseña incorrecta"))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val savedSession = localRepository.getSession()
+            if (savedSession != null &&
+                savedSession.matricula == request.strMatricula &&
+                savedSession.contrasenia == request.strContrasenia) {
+                Result.success(LoginResult(acceso = true, mensaje = "Modo Offline: Login correcto"))
+            } else {
+                Result.failure(Exception("Sin conexión a internet y no hay sesión guardada.", e))
+            }
         }
     }
 
@@ -76,7 +92,7 @@ class SicenetRepository : InterfaceRepository {
                 </soap:Envelope>
             """.trimIndent()
 
-            val responseBody: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+            val responseBody: String = client.post(serviceUrl) {
                 header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
                 header("SOAPAction", "http://tempuri.org/getAlumnoAcademicoWithLineamiento")
                 setBody(soapBody)
@@ -86,12 +102,14 @@ class SicenetRepository : InterfaceRepository {
 
             if (jsonString.isNotBlank()) {
                 val profile = jsonParser.decodeFromString<AlumnoProfile>(jsonString)
+                localRepository.saveProfile(profile)
                 Result.success(profile)
             } else {
                 Result.failure(Exception("No se pudo obtener la información del perfil."))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = localRepository.getProfile()
+            if (cached != null) Result.success(cached) else Result.failure(e)
         }
     }
 
@@ -102,12 +120,14 @@ class SicenetRepository : InterfaceRepository {
                 <?xml version="1.0" encoding="utf-8"?>
                 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                   <soap:Body>
-                    <getAllCalifFinalByAlumnos xmlns="http://tempuri.org/" />
+                    <getAllCalifFinalByAlumnos xmlns="http://tempuri.org/">
+                      <modEducativo>$modEducativo</modEducativo>
+                    </getAllCalifFinalByAlumnos>
                   </soap:Body>
                 </soap:Envelope>
             """.trimIndent()
 
-            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+            val response: String = client.post(serviceUrl) {
                 header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
                 header("SOAPAction", "http://tempuri.org/getAllCalifFinalByAlumnos")
                 setBody(soapBody)
@@ -116,12 +136,14 @@ class SicenetRepository : InterfaceRepository {
             val jsonString = extractTagContent(response, "getAllCalifFinalByAlumnosResult")
             if (jsonString.isNotBlank()) {
                 val items = jsonParser.decodeFromString<List<CalifFinalItem>>(jsonString)
+                localRepository.saveCalifFinales(items)
                 Result.success(items)
             } else {
                 Result.success(emptyList())
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = localRepository.getCalifFinales()
+            if (cached.isNotEmpty()) Result.success(cached) else Result.failure(e)
         }
     }
 
@@ -137,21 +159,24 @@ class SicenetRepository : InterfaceRepository {
                 </soap:Envelope>
             """.trimIndent()
 
-            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+            val response: String = client.post(serviceUrl) {
                 header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
                 header("SOAPAction", "http://tempuri.org/getCalifUnidadesByAlumno")
                 setBody(soapBody)
             }.body()
 
             val jsonString = extractTagContent(response, "getCalifUnidadesByAlumnoResult")
+            
             if (jsonString.isNotBlank()) {
                 val items = jsonParser.decodeFromString<List<CalifUnidadItem>>(jsonString)
+                localRepository.saveCalifUnidades(items)
                 Result.success(items)
             } else {
                 Result.success(emptyList())
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = localRepository.getCalifUnidades()
+            if (cached.isNotEmpty()) Result.success(cached) else Result.failure(e)
         }
     }
 
@@ -162,26 +187,31 @@ class SicenetRepository : InterfaceRepository {
                 <?xml version="1.0" encoding="utf-8"?>
                 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                   <soap:Body>
-                    <getAllKardexConPromedioByAlumno xmlns="http://tempuri.org/" />
+                    <getAllKardexConPromedioByAlumno xmlns="http://tempuri.org/">
+                      <aluLineamiento>$aluLineamiento</aluLineamiento>
+                    </getAllKardexConPromedioByAlumno>
                   </soap:Body>
                 </soap:Envelope>
             """.trimIndent()
 
-            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+            val response: String = client.post(serviceUrl) {
                 header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
                 header("SOAPAction", "http://tempuri.org/getAllKardexConPromedioByAlumno")
                 setBody(soapBody)
             }.body()
 
             val jsonString = extractTagContent(response, "getAllKardexConPromedioByAlumnoResult")
+            
             if (jsonString.isNotBlank()) {
-                val items = jsonParser.decodeFromString<List<KardexItem>>(jsonString)
-                Result.success(items)
+                val responseObj = jsonParser.decodeFromString<KardexResponse>(jsonString)
+                localRepository.saveKardex(responseObj.lstKardex)
+                Result.success(responseObj.lstKardex)
             } else {
                 Result.success(emptyList())
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = localRepository.getKardex()
+            if (cached.isNotEmpty()) Result.success(cached) else Result.failure(e)
         }
     }
 
@@ -197,7 +227,7 @@ class SicenetRepository : InterfaceRepository {
                 </soap:Envelope>
             """.trimIndent()
 
-            val response: String = client.post("https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx") {
+            val response: String = client.post(serviceUrl) {
                 header(HttpHeaders.ContentType, "text/xml; charset=utf-8")
                 header("SOAPAction", "http://tempuri.org/getCargaAcademicaByAlumno")
                 setBody(soapBody)
@@ -206,12 +236,14 @@ class SicenetRepository : InterfaceRepository {
             val jsonString = extractTagContent(response, "getCargaAcademicaByAlumnoResult")
             if (jsonString.isNotBlank()) {
                 val items = jsonParser.decodeFromString<List<CargaItem>>(jsonString)
+                localRepository.saveCarga(items)
                 Result.success(items)
             } else {
                 Result.success(emptyList())
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = localRepository.getCarga()
+            if (cached.isNotEmpty()) Result.success(cached) else Result.failure(e)
         }
     }
 
@@ -235,8 +267,9 @@ class SicenetRepository : InterfaceRepository {
 
     override suspend fun logout() {
         isWarmedUp = false
+        localRepository.clearAll()
         try {
-            val url = Url("https://sicenet.surguanajuato.tecnm.mx")
+            val url = Url(baseUrl)
             val cookies = HttpClientFactory.cookieStorage.get(url)
             cookies.forEach { cookie ->
                 HttpClientFactory.cookieStorage.addCookie(

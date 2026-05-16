@@ -103,7 +103,8 @@ fun UnidadMateriaCard(item: CalifUnidadItem) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                item.unidades
+                // Usamos la nueva función para obtener el mapa de las unidades C1, C2...
+                item.getUnidadesMap()
                     .toList()
                     .sortedBy { it.first }
                     .forEach { (num, calif) ->
@@ -111,15 +112,15 @@ fun UnidadMateriaCard(item: CalifUnidadItem) {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Unidad $num",
+                                text = "U$num",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 color = Color(0xFF062970)
                             )
                             Text(
                                 text = calif,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
+                                fontSize = 13.sp
                             )
                         }
                     }

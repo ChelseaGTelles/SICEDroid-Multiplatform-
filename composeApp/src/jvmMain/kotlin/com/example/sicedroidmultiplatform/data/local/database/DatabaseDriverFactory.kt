@@ -14,10 +14,20 @@ actual class DatabaseDriverFactory actual constructor(
         val databasePath =
             File(System.getProperty("user.home"), "sicenet.db")
 
-        val driver: SqlDriver =
+        val driver =
             JdbcSqliteDriver("jdbc:sqlite:${databasePath.absolutePath}")
 
-        SicenetDatabase.Schema.create(driver)
+        driver.execute(
+            null,
+            "PRAGMA foreign_keys = ON;",
+            0
+        )
+
+        try {
+            SicenetDatabase.Schema.create(driver)
+        } catch (_: Exception) {
+            // La BD ya existe
+        }
 
         return driver
     }

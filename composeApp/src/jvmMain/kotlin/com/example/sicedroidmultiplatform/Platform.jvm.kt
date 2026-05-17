@@ -1,6 +1,6 @@
 package com.example.sicedroidmultiplatform
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.example.sicedroidmultiplatform.data.local.database.DatabaseDriverFactory
 import com.example.sicedroidmultiplatform.database.SicenetDatabase
 
 class JVMPlatform : Platform {
@@ -12,7 +12,9 @@ actual fun getPlatform(): Platform = JVMPlatform()
 
 actual fun createDatabase(): SicenetDatabase {
 
-    val driver = JdbcSqliteDriver("jdbc:sqlite:sicenet.db")
+    val driverFactory = DatabaseDriverFactory()
 
-    return SicenetDatabase(driver)
+    return SicenetDatabase(
+        driverFactory.createDriver()
+    )
 }

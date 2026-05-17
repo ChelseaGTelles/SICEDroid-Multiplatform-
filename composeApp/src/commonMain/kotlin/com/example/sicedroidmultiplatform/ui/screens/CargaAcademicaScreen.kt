@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.sicedroidmultiplatform.data.models.CargaItem
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetViewModel
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetUiState
+import com.example.sicedroidmultiplatform.ui.components.ConnectionErrorCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,8 +76,11 @@ fun CargaAcademicaScreen(viewModel: SicenetViewModel, onBack: () -> Unit) {
                     }
                 }
                 is SicenetUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
-                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        ConnectionErrorCard(
+                            message = state.message,
+                            onRetry = { viewModel.getCarga() }
+                        )
                     }
                 }
                 else -> {}

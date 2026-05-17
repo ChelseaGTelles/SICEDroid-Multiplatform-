@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetViewModel
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetUiState
+import com.example.sicedroidmultiplatform.ui.components.ConnectionErrorCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -145,10 +146,9 @@ fun LoginScreen(viewModel: SicenetViewModel, onLoginSuccess: () -> Unit) {
                 }
 
                 if (uiState is SicenetUiState.Error) {
-                    Text(
-                        text = (uiState as SicenetUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 8.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ConnectionErrorCard(
+                        message = (uiState as SicenetUiState.Error).message
                     )
                 }
             }

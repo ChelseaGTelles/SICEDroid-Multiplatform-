@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.sicedroidmultiplatform.data.models.AlumnoProfile
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetViewModel
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetUiState
+import com.example.sicedroidmultiplatform.ui.components.ConnectionErrorCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,13 +69,10 @@ fun PerfilScreen(viewModel: SicenetViewModel, onNavigate: (String) -> Unit, onLo
                         ProfileDataDisplay(state.profile)
                     }
                     is SicenetUiState.Error -> {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = state.message, color = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { viewModel.getProfile() }) {
-                                Text("Reintentar")
-                            }
-                        }
+                        ConnectionErrorCard(
+                            message = state.message,
+                            onRetry = { viewModel.getProfile() }
+                        )
                     }
                     else -> {}
                 }

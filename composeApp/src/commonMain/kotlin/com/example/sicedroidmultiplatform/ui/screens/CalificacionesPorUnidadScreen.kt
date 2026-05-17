@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.sicedroidmultiplatform.data.models.CalifUnidadItem
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetViewModel
 import com.example.sicedroidmultiplatform.ui.viewModel.SicenetUiState
+import com.example.sicedroidmultiplatform.ui.components.ConnectionErrorCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +76,12 @@ fun CalificacionesPorUnidadScreen(viewModel: SicenetViewModel, onBack: () -> Uni
                     }
                 }
                 is SicenetUiState.Error -> {
-                    Text(text = state.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        ConnectionErrorCard(
+                            message = state.message,
+                            onRetry = { viewModel.getCalifUnidades() }
+                        )
+                    }
                 }
                 else -> {}
             }

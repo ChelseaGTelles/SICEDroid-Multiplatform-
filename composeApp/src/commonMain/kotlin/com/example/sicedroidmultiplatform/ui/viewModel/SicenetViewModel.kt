@@ -52,6 +52,16 @@ class SicenetViewModel(
     
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    fun checkExistingSession(): Boolean {
+        val session = localRepository.getSession()
+        return if (session != null) {
+            _uiState.value = SicenetUiState.Success(LoginResult(acceso = true, mensaje = "Sesión recuperada"))
+            true
+        } else {
+            false
+        }
+    }
+
     fun login(matricula: String, contrasenia: String, tipoUsuario: String) {
         if (matricula.isBlank() || contrasenia.isBlank()) {
             _uiState.value = SicenetUiState.Error("Matrícula y contraseña son requeridas")
@@ -89,7 +99,6 @@ class SicenetViewModel(
 
     fun getProfile() {
         scope.launch {
-            // Intentar cargar desde caché inmediatamente
             val cached = localRepository.getProfile()
             if (cached != null) {
                 _uiState.value = SicenetUiState.ProfileLoaded(
@@ -101,7 +110,6 @@ class SicenetViewModel(
                 _uiState.value = SicenetUiState.Loading
             }
 
-            // Petición a red en segundo plano
             val result = repository.getAlumno()
 
             result.onSuccess { profile ->
@@ -112,8 +120,6 @@ class SicenetViewModel(
                     fromCache = false
                 )
             }.onFailure { error ->
-                // Si ya tenemos datos de caché, no mostramos error, solo dejamos lo que hay.
-                // Si no hay nada, entonces sí mostramos error.
                 if (localRepository.getProfile() == null) {
                     _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
                 }

@@ -25,8 +25,12 @@ fun SicenetApp() {
         val database = createDatabase()
         val localRepo = LocalRepository(database)
         val mainRepo = SicenetRepository(localRepo)
-        // Corregido: Pasamos ambos repositorios para habilitar el modo offline
         SicenetViewModel(mainRepo, localRepo)
+    }
+
+    // Decidimos la pantalla de inicio dinámicamente antes de cargar el NavHost
+    val startDestination = remember {
+        if (viewModel.checkExistingSession()) "profile" else "login"
     }
     
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -52,7 +56,7 @@ fun SicenetApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController, 
-            startDestination = "login",
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("login") {

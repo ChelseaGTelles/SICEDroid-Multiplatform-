@@ -11,7 +11,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.sicedroidmultiplatform.createDatabase
-import com.example.sicedroidmultiplatform.data.repository.LocalRepository
+import com.example.sicedroidmultiplatform.data.repository.SicenetRemoteDataSource
+import com.example.sicedroidmultiplatform.data.repository.SqlDelightLocalDataSource
 import com.example.sicedroidmultiplatform.data.repository.SicenetRepository
 import com.example.sicedroidmultiplatform.ui.components.SicenetBottomBar
 import com.example.sicedroidmultiplatform.ui.screens.*
@@ -23,12 +24,15 @@ fun SicenetApp() {
 
     val viewModel = remember {
         val database = createDatabase()
-        val localRepo = LocalRepository(database)
-        val mainRepo = SicenetRepository(localRepo)
-        SicenetViewModel(mainRepo, localRepo)
+        
+        // Ahora usamos las nuevas clases dentro de la carpeta repository
+        val localDataSource = SqlDelightLocalDataSource(database)
+        val remoteDataSource = SicenetRemoteDataSource()
+        
+        val repository = SicenetRepository(localDataSource, remoteDataSource)
+        SicenetViewModel(repository)
     }
 
-    // Decidimos la pantalla de inicio dinámicamente antes de cargar el NavHost
     val startDestination = remember {
         if (viewModel.checkExistingSession()) "profile" else "login"
     }
@@ -43,9 +47,7 @@ fun SicenetApp() {
                     currentRoute = currentRoute,
                     onNavigate = { route ->
                         navController.navigate(route) {
-                            popUpTo("profile") {
-                                saveState = true
-                            }
+                            popUpTo("profile") { saveState = true }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -79,28 +81,16 @@ fun SicenetApp() {
                 )
             }
             composable("calificaciones_unidad") {
-                CalificacionesPorUnidadScreen(
-                    viewModel = viewModel, 
-                    onBack = { navController.popBackStack() }
-                )
+                CalificacionesPorUnidadScreen(viewModel, onBack = { navController.popBackStack() })
             }
             composable("calificaciones_finales") {
-                CalificacionesFinalesScreen(
-                    viewModel = viewModel, 
-                    onBack = { navController.popBackStack() }
-                )
+                CalificacionesFinalesScreen(viewModel, onBack = { navController.popBackStack() })
             }
             composable("kardex") {
-                KardexScreen(
-                    viewModel = viewModel, 
-                    onBack = { navController.popBackStack() }
-                )
+                KardexScreen(viewModel, onBack = { navController.popBackStack() })
             }
             composable("carga_academica") {
-                CargaAcademicaScreen(
-                    viewModel = viewModel, 
-                    onBack = { navController.popBackStack() }
-                )
+                CargaAcademicaScreen(viewModel, onBack = { navController.popBackStack() })
             }
         }
     }

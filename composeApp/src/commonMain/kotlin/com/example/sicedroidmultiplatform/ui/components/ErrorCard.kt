@@ -15,8 +15,17 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ConnectionErrorCard(message: String, onRetry: (() -> Unit)? = null) {
-    val isNoInternet = message.contains("Sin conexión", ignoreCase = true)
-    
+    val msgLower = message.lowercase()
+    val isNoInternet = msgLower.contains("sin conexión") || 
+                       msgLower.contains("unable") || 
+                       msgLower.contains("access") || 
+                       msgLower.contains("connect") || 
+                       msgLower.contains("internet") ||
+                       msgLower.contains("host") ||
+                       msgLower.contains("timeout") ||
+                       msgLower.contains("refused") ||
+                       msgLower.contains("failed")
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -27,17 +36,17 @@ fun ConnectionErrorCard(message: String, onRetry: (() -> Unit)? = null) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (isNoInternet) {
                 Icon(
                     imageVector = Icons.Default.WifiOff,
                     contentDescription = null,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(56.dp),
                     tint = Color(0xFFD32F2F)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "¡Primero conéctate a Internet!",
                     fontWeight = FontWeight.Bold,
@@ -45,11 +54,13 @@ fun ConnectionErrorCard(message: String, onRetry: (() -> Unit)? = null) {
                     color = Color(0xFFD32F2F),
                     textAlign = TextAlign.Center
                 )
+                // Ya no mostramos el mensaje técnico (subtexto) aquí para mantenerlo limpio
             } else {
                 Text(
                     text = message,
                     color = MaterialTheme.colorScheme.onErrorContainer,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Medium
                 )
             }
             

@@ -4,7 +4,6 @@ import com.example.sicedroidmultiplatform.data.models.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.example.sicedroidmultiplatform.data.repository.InterfaceRepository
-import com.example.sicedroidmultiplatform.data.repository.LocalRepository
 import com.example.sicedroidmultiplatform.data.AccesoLoginRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,8 +43,7 @@ sealed class SicenetUiState {
 }
 
 class SicenetViewModel(
-    private val repository: InterfaceRepository,
-    private val localRepository: LocalRepository
+    private val repository: InterfaceRepository
 ) {
     private val _uiState = MutableStateFlow<SicenetUiState>(SicenetUiState.Idle)
     val uiState = _uiState.asStateFlow()
@@ -53,7 +51,7 @@ class SicenetViewModel(
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     fun checkExistingSession(): Boolean {
-        val session = localRepository.getSession()
+        val session = repository.getSession()
         return if (session != null) {
             _uiState.value = SicenetUiState.Success(LoginResult(acceso = true, mensaje = "Sesión recuperada"))
             true
@@ -70,23 +68,16 @@ class SicenetViewModel(
 
         scope.launch {
             _uiState.value = SicenetUiState.Loading
-            try {
-                val result = repository.accesoLogin(
-                    AccesoLoginRequest(matricula, contrasenia, tipoUsuario)
-                )
-                
-                result.onSuccess { login ->
+            repository.accesoLogin(AccesoLoginRequest(matricula, contrasenia, tipoUsuario))
+                .onSuccess { login ->
                     if (login.acceso) {
                         _uiState.value = SicenetUiState.Success(login)
                     } else {
                         _uiState.value = SicenetUiState.Error(login.mensaje ?: "Credenciales incorrectas")
                     }
                 }.onFailure { e ->
-                    _uiState.value = SicenetUiState.Error("Error: ${e.message}")
+                    _uiState.value = SicenetUiState.Error(e.message ?: "Error desconocido")
                 }
-            } catch (e: Exception) {
-                _uiState.value = SicenetUiState.Error("Excepción: ${e.message}")
-            }
         }
     }
 
@@ -99,147 +90,143 @@ class SicenetViewModel(
 
     fun getProfile() {
         scope.launch {
-            val cached = localRepository.getProfile()
+            // Caché primero
+            val cached = repository.getCachedProfile()
             if (cached != null) {
                 _uiState.value = SicenetUiState.ProfileLoaded(
                     profile = cached,
-                    lastUpdated = localRepository.getProfileLastUpdated(),
+                    lastUpdated = repository.getProfileLastUpdated(),
                     fromCache = true
                 )
             } else {
                 _uiState.value = SicenetUiState.Loading
             }
 
-            val result = repository.getAlumno()
-
-            result.onSuccess { profile ->
-                localRepository.saveProfile(profile)
-                _uiState.value = SicenetUiState.ProfileLoaded(
-                    profile = profile,
-                    lastUpdated = localRepository.getProfileLastUpdated(),
-                    fromCache = false
-                )
-            }.onFailure { error ->
-                if (localRepository.getProfile() == null) {
-                    _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
+            // Red después
+            repository.fetchProfile()
+                .onSuccess { profile ->
+                    _uiState.value = SicenetUiState.ProfileLoaded(
+                        profile = profile,
+                        lastUpdated = "Ahora",
+                        fromCache = false
+                    )
+                }.onFailure { error ->
+                    if (repository.getCachedProfile() == null) {
+                        _uiState.value = SicenetUiState.Error(error.message ?: "Error de red")
+                    }
                 }
-            }
         }
     }
 
     fun getCarga() {
         scope.launch {
-            val cached = localRepository.getCarga()
+            val cached = repository.getCachedCarga()
             if (cached.isNotEmpty()) {
                 _uiState.value = SicenetUiState.CargaLoaded(
                     items = cached,
-                    lastUpdated = localRepository.getCargaLastUpdated(),
+                    lastUpdated = repository.getCargaLastUpdated(),
                     fromCache = true
                 )
             } else {
                 _uiState.value = SicenetUiState.Loading
             }
 
-            val result = repository.getCargaAcademicaByAlumno()
-            
-            result.onSuccess { items ->
-                _uiState.value = SicenetUiState.CargaLoaded(
-                    items = items,
-                    lastUpdated = localRepository.getCargaLastUpdated(),
-                    fromCache = false
-                )
-            }.onFailure { error ->
-                if (localRepository.getCarga().isEmpty()) {
-                    _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
+            repository.fetchCarga()
+                .onSuccess { items ->
+                    _uiState.value = SicenetUiState.CargaLoaded(
+                        items = items,
+                        lastUpdated = "Ahora",
+                        fromCache = false
+                    )
+                }.onFailure { error ->
+                    if (repository.getCachedCarga().isEmpty()) {
+                        _uiState.value = SicenetUiState.Error(error.message ?: "Error de red")
+                    }
                 }
-            }
         }
     }
 
     fun getKardex(lineamiento: Int) {
         scope.launch {
-            val cached = localRepository.getKardex()
+            val cached = repository.getCachedKardex()
             if (cached.isNotEmpty()) {
                 _uiState.value = SicenetUiState.KardexLoaded(
                     items = cached,
-                    lastUpdated = localRepository.getKardexLastUpdated(),
+                    lastUpdated = repository.getKardexLastUpdated(),
                     fromCache = true
                 )
             } else {
                 _uiState.value = SicenetUiState.Loading
             }
 
-            val result = repository.getAllKardexConPromedioByAlumno(lineamiento)
-            
-            result.onSuccess { items ->
-                _uiState.value = SicenetUiState.KardexLoaded(
-                    items = items,
-                    lastUpdated = localRepository.getKardexLastUpdated(),
-                    fromCache = false
-                )
-            }.onFailure { error ->
-                if (localRepository.getKardex().isEmpty()) {
-                    _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
+            repository.fetchKardex(lineamiento)
+                .onSuccess { items ->
+                    _uiState.value = SicenetUiState.KardexLoaded(
+                        items = items,
+                        lastUpdated = "Ahora",
+                        fromCache = false
+                    )
+                }.onFailure { error ->
+                    if (repository.getCachedKardex().isEmpty()) {
+                        _uiState.value = SicenetUiState.Error(error.message ?: "Error de red")
+                    }
                 }
-            }
         }
     }
 
     fun getCalifUnidades() {
         scope.launch {
-            val cached = localRepository.getCalifUnidades()
+            val cached = repository.getCachedUnidades()
             if (cached.isNotEmpty()) {
                 _uiState.value = SicenetUiState.UnidadesLoaded(
                     items = cached,
-                    lastUpdated = localRepository.getCalifUnidadesLastUpdated(),
+                    lastUpdated = repository.getUnidadesLastUpdated(),
                     fromCache = true
                 )
             } else {
                 _uiState.value = SicenetUiState.Loading
             }
 
-            val result = repository.getCalifUnidadesByAlumno()
-            
-            result.onSuccess { items ->
-                _uiState.value = SicenetUiState.UnidadesLoaded(
-                    items = items,
-                    lastUpdated = localRepository.getCalifUnidadesLastUpdated(),
-                    fromCache = false
-                )
-            }.onFailure { error ->
-                if (localRepository.getCalifUnidades().isEmpty()) {
-                    _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
+            repository.fetchUnidades()
+                .onSuccess { items ->
+                    _uiState.value = SicenetUiState.UnidadesLoaded(
+                        items = items,
+                        lastUpdated = "Ahora",
+                        fromCache = false
+                    )
+                }.onFailure { error ->
+                    if (repository.getCachedUnidades().isEmpty()) {
+                        _uiState.value = SicenetUiState.Error(error.message ?: "Error de red")
+                    }
                 }
-            }
         }
     }
 
     fun getCalifFinales(modEducativo: Int) {
         scope.launch {
-            val cached = localRepository.getCalifFinales()
+            val cached = repository.getCachedFinales()
             if (cached.isNotEmpty()) {
                 _uiState.value = SicenetUiState.FinalesLoaded(
                     items = cached,
-                    lastUpdated = localRepository.getCalifFinalesLastUpdated(),
+                    lastUpdated = repository.getFinalesLastUpdated(),
                     fromCache = true
                 )
             } else {
                 _uiState.value = SicenetUiState.Loading
             }
 
-            val result = repository.getAllCalifFinalByAlumnos(modEducativo)
-            
-            result.onSuccess { items ->
-                _uiState.value = SicenetUiState.FinalesLoaded(
-                    items = items,
-                    lastUpdated = localRepository.getCalifFinalesLastUpdated(),
-                    fromCache = false
-                )
-            }.onFailure { error ->
-                if (localRepository.getCalifFinales().isEmpty()) {
-                    _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
+            repository.fetchFinales(modEducativo)
+                .onSuccess { items ->
+                    _uiState.value = SicenetUiState.FinalesLoaded(
+                        items = items,
+                        lastUpdated = "Ahora",
+                        fromCache = false
+                    )
+                }.onFailure { error ->
+                    if (repository.getCachedFinales().isEmpty()) {
+                        _uiState.value = SicenetUiState.Error(error.message ?: "Error de red")
+                    }
                 }
-            }
         }
     }
 }

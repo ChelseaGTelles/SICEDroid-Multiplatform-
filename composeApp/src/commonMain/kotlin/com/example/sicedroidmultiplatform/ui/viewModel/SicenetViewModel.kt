@@ -89,28 +89,33 @@ class SicenetViewModel(
 
     fun getProfile() {
         scope.launch {
-            _uiState.value = SicenetUiState.Loading
+            // Intentar cargar desde caché inmediatamente
+            val cached = localRepository.getProfile()
+            if (cached != null) {
+                _uiState.value = SicenetUiState.ProfileLoaded(
+                    profile = cached,
+                    lastUpdated = localRepository.getProfileLastUpdated(),
+                    fromCache = true
+                )
+            } else {
+                _uiState.value = SicenetUiState.Loading
+            }
+
+            // Petición a red en segundo plano
             val result = repository.getAlumno()
 
             result.onSuccess { profile ->
-
                 localRepository.saveProfile(profile)
-
                 _uiState.value = SicenetUiState.ProfileLoaded(
                     profile = profile,
                     lastUpdated = localRepository.getProfileLastUpdated(),
                     fromCache = false
                 )
             }.onFailure { error ->
-                val cached = localRepository.getProfile()
-                if (cached != null) {
-                    _uiState.value = SicenetUiState.ProfileLoaded(
-                        profile = cached,
-                        lastUpdated = localRepository.getProfileLastUpdated(),
-                        fromCache = true
-                    )
-                } else {
-                    _uiState.value = SicenetUiState.Error("Sin conexión y sin datos locales: ${error.message}")
+                // Si ya tenemos datos de caché, no mostramos error, solo dejamos lo que hay.
+                // Si no hay nada, entonces sí mostramos error.
+                if (localRepository.getProfile() == null) {
+                    _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
                 }
             }
         }
@@ -118,7 +123,17 @@ class SicenetViewModel(
 
     fun getCarga() {
         scope.launch {
-            _uiState.value = SicenetUiState.Loading
+            val cached = localRepository.getCarga()
+            if (cached.isNotEmpty()) {
+                _uiState.value = SicenetUiState.CargaLoaded(
+                    items = cached,
+                    lastUpdated = localRepository.getCargaLastUpdated(),
+                    fromCache = true
+                )
+            } else {
+                _uiState.value = SicenetUiState.Loading
+            }
+
             val result = repository.getCargaAcademicaByAlumno()
             
             result.onSuccess { items ->
@@ -128,14 +143,7 @@ class SicenetViewModel(
                     fromCache = false
                 )
             }.onFailure { error ->
-                val cached = localRepository.getCarga()
-                if (cached.isNotEmpty()) {
-                    _uiState.value = SicenetUiState.CargaLoaded(
-                        items = cached,
-                        lastUpdated = localRepository.getCargaLastUpdated(),
-                        fromCache = true
-                    )
-                } else {
+                if (localRepository.getCarga().isEmpty()) {
                     _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
                 }
             }
@@ -144,7 +152,17 @@ class SicenetViewModel(
 
     fun getKardex(lineamiento: Int) {
         scope.launch {
-            _uiState.value = SicenetUiState.Loading
+            val cached = localRepository.getKardex()
+            if (cached.isNotEmpty()) {
+                _uiState.value = SicenetUiState.KardexLoaded(
+                    items = cached,
+                    lastUpdated = localRepository.getKardexLastUpdated(),
+                    fromCache = true
+                )
+            } else {
+                _uiState.value = SicenetUiState.Loading
+            }
+
             val result = repository.getAllKardexConPromedioByAlumno(lineamiento)
             
             result.onSuccess { items ->
@@ -154,14 +172,7 @@ class SicenetViewModel(
                     fromCache = false
                 )
             }.onFailure { error ->
-                val cached = localRepository.getKardex()
-                if (cached.isNotEmpty()) {
-                    _uiState.value = SicenetUiState.KardexLoaded(
-                        items = cached,
-                        lastUpdated = localRepository.getKardexLastUpdated(),
-                        fromCache = true
-                    )
-                } else {
+                if (localRepository.getKardex().isEmpty()) {
                     _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
                 }
             }
@@ -170,7 +181,17 @@ class SicenetViewModel(
 
     fun getCalifUnidades() {
         scope.launch {
-            _uiState.value = SicenetUiState.Loading
+            val cached = localRepository.getCalifUnidades()
+            if (cached.isNotEmpty()) {
+                _uiState.value = SicenetUiState.UnidadesLoaded(
+                    items = cached,
+                    lastUpdated = localRepository.getCalifUnidadesLastUpdated(),
+                    fromCache = true
+                )
+            } else {
+                _uiState.value = SicenetUiState.Loading
+            }
+
             val result = repository.getCalifUnidadesByAlumno()
             
             result.onSuccess { items ->
@@ -180,14 +201,7 @@ class SicenetViewModel(
                     fromCache = false
                 )
             }.onFailure { error ->
-                val cached = localRepository.getCalifUnidades()
-                if (cached.isNotEmpty()) {
-                    _uiState.value = SicenetUiState.UnidadesLoaded(
-                        items = cached,
-                        lastUpdated = localRepository.getCalifUnidadesLastUpdated(),
-                        fromCache = true
-                    )
-                } else {
+                if (localRepository.getCalifUnidades().isEmpty()) {
                     _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
                 }
             }
@@ -196,7 +210,17 @@ class SicenetViewModel(
 
     fun getCalifFinales(modEducativo: Int) {
         scope.launch {
-            _uiState.value = SicenetUiState.Loading
+            val cached = localRepository.getCalifFinales()
+            if (cached.isNotEmpty()) {
+                _uiState.value = SicenetUiState.FinalesLoaded(
+                    items = cached,
+                    lastUpdated = localRepository.getCalifFinalesLastUpdated(),
+                    fromCache = true
+                )
+            } else {
+                _uiState.value = SicenetUiState.Loading
+            }
+
             val result = repository.getAllCalifFinalByAlumnos(modEducativo)
             
             result.onSuccess { items ->
@@ -206,14 +230,7 @@ class SicenetViewModel(
                     fromCache = false
                 )
             }.onFailure { error ->
-                val cached = localRepository.getCalifFinales()
-                if (cached.isNotEmpty()) {
-                    _uiState.value = SicenetUiState.FinalesLoaded(
-                        items = cached,
-                        lastUpdated = localRepository.getCalifFinalesLastUpdated(),
-                        fromCache = true
-                    )
-                } else {
+                if (localRepository.getCalifFinales().isEmpty()) {
                     _uiState.value = SicenetUiState.Error("Sin conexión: ${error.message}")
                 }
             }

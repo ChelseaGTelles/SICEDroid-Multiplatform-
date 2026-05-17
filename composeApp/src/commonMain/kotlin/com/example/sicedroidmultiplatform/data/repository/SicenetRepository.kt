@@ -9,7 +9,6 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.util.date.*
 import kotlinx.serialization.json.Json
-import kotlinx.coroutines.delay
 
 class SicenetRepository(
     private val localRepository: LocalRepository
@@ -30,7 +29,6 @@ class SicenetRepository(
         try {
             client.get(serviceUrl)
             isWarmedUp = true
-            delay(500)
         } catch (e: Exception) {
             // No propagamos el error aquí, permitimos que el post falle si no hay red
         }

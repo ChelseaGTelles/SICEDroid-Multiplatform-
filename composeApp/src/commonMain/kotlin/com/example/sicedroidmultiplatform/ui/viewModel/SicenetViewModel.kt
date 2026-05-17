@@ -91,8 +91,11 @@ class SicenetViewModel(
         scope.launch {
             _uiState.value = SicenetUiState.Loading
             val result = repository.getAlumno()
-            
+
             result.onSuccess { profile ->
+
+                localRepository.saveProfile(profile)
+
                 _uiState.value = SicenetUiState.ProfileLoaded(
                     profile = profile,
                     lastUpdated = localRepository.getProfileLastUpdated(),

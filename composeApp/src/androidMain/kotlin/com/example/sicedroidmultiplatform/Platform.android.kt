@@ -1,30 +1,27 @@
 package com.example.sicedroidmultiplatform
 
-import android.os.Build
-import androidx.room.Room
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.example.sicedroidmultiplatform.data.local.SicenetDatabase
+import android.content.Context
+import com.example.sicedroidmultiplatform.database.SicenetDatabase
+import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 
 class AndroidPlatform : Platform {
-    override val name: String = "Android ${Build.VERSION.SDK_INT}"
+    override val name: String = "Android ${android.os.Build.VERSION.SDK_INT}"
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform()
 
-// Necesitamos el contexto de Android para Room. 
-// Una forma común en KMP es usar un objeto singleton inicializado en el MainActivity o un provider.
-// Para mantenerlo simple y directo:
-private lateinit var appContext: android.content.Context
+private lateinit var appContext: Context
 
-fun initAndroidContext(context: android.content.Context) {
+fun initAndroidContext(context: Context) {
     appContext = context
 }
 
 actual fun createDatabase(): SicenetDatabase {
-    val dbFile = appContext.getDatabasePath("sicenet.db")
-    return Room.databaseBuilder<SicenetDatabase>(
+    val driver = AndroidSqliteDriver(
+        schema = SicenetDatabase.Schema,
         context = appContext,
-        name = dbFile.absolutePath
-    ).setDriver(BundledSQLiteDriver())
-        .build()
+        name = "sicenet.db"
+    )
+
+    return SicenetDatabase(driver)
 }

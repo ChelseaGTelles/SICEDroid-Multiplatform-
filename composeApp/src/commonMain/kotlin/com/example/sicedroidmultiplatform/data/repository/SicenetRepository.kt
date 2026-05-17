@@ -75,7 +75,7 @@ class SicenetRepository(
                 savedSession.contrasenia == request.strContrasenia) {
                 Result.success(LoginResult(acceso = true, mensaje = "Modo Offline: Login correcto"))
             } else {
-                Result.failure(Exception("Sin conexión a internet y no hay sesión guardada.", e))
+                Result.failure(Exception("No hay conexión y no existen datos guardados.", e))
             }
         }
     }

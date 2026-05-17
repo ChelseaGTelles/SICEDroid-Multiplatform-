@@ -20,8 +20,7 @@ import com.example.sicedroidmultiplatform.ui.viewModel.SicenetViewModel
 @Composable
 fun SicenetApp() {
     val navController = rememberNavController()
-    
-    // Inicializamos la base de datos y los repositorios
+
     val viewModel = remember {
         val database = createDatabase()
         val localRepo = LocalRepository(database)

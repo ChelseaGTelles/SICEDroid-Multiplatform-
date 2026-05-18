@@ -144,9 +144,18 @@ compose.desktop {
             )
 
             packageName =
-                "com.example.sicedroidmultiplatform"
+                "SiceNet"
 
             packageVersion = "1.0.0"
+
+            modules("java.sql", "jdk.crypto.ec")
+
+            windows {
+                shortcut = true
+                menu = true
+
+                iconFile.set(project.file("src/jvmMain/resources/logo.ico"))
+            }
         }
     }
 }

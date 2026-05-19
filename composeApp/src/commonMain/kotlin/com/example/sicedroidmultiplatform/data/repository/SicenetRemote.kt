@@ -1,7 +1,6 @@
 package com.example.sicedroidmultiplatform.data.repository
 
-import com.example.sicedroidmultiplatform.getPlatform
-import com.example.sicedroidmultiplatform.data.AccesoLoginRequest
+import com.example.sicedroidmultiplatform.data.models.AccesoLoginRequest
 import com.example.sicedroidmultiplatform.data.models.*
 import com.example.sicedroidmultiplatform.data.network.HttpClientFactory
 import io.ktor.client.call.*
@@ -11,7 +10,7 @@ import io.ktor.util.date.*
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.delay
 
-class SicenetRemoteDataSource : RemoteDataSource {
+class SicenetRemote : InterfaceRemote {
     private val client = HttpClientFactory.client
     private var isWarmedUp = false
     private val serviceUrl = "https://sicenet.surguanajuato.tecnm.mx/ws/wsalumnos.asmx"

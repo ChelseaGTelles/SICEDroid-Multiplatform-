@@ -10,6 +10,12 @@ data class LoginResult(
     val rawResponse: String? = null
 )
 
+data class AccesoLoginRequest(
+    val strMatricula: String,
+    val strContrasenia: String,
+    val tipoUsuario: String
+)
+
 @Serializable
 data class AlumnoProfile(
     val matricula: String = "",

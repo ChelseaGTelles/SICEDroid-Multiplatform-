@@ -1,19 +1,15 @@
 package com.example.sicedroidmultiplatform.data.repository
 
-import com.example.sicedroidmultiplatform.data.AccesoLoginRequest
+import com.example.sicedroidmultiplatform.data.models.AccesoLoginRequest
 import com.example.sicedroidmultiplatform.data.models.*
 import com.example.sicedroidmultiplatform.database.SessionEntity
 
 class SicenetRepository(
     private val localDataSource: LocalDataSource,
-    private val remoteDataSource: RemoteDataSource
+    private val interfaceRemote: InterfaceRemote
 ) : InterfaceRepository {
 
     override fun getSession(): SessionEntity? = localDataSource.getSession()
-
-    /**
-     * Si el servidor responde vacío busca tus credenciales guardadas, inicia sesión automáticamente y reintenta.
-     */
     private suspend fun <T> safeRemoteCall(call: suspend () -> Result<T>): Result<T> {
         val result = call()
         
@@ -21,7 +17,7 @@ class SicenetRepository(
             val session = localDataSource.getSession()
             if (session != null) {
                 // Re-autenticación
-                val loginResult = remoteDataSource.accesoLogin(
+                val loginResult = interfaceRemote.accesoLogin(
                     AccesoLoginRequest(session.matricula, session.contrasenia, session.tipoUsuario)
                 )
 
@@ -34,7 +30,7 @@ class SicenetRepository(
     }
 
     override suspend fun accesoLogin(request: AccesoLoginRequest): Result<LoginResult> {
-        val result = remoteDataSource.accesoLogin(request)
+        val result = interfaceRemote.accesoLogin(request)
         result.onSuccess {
             if (it.acceso) {
                 localDataSource.saveSession(request.strMatricula, request.strContrasenia, request.tipoUsuario)
@@ -49,42 +45,42 @@ class SicenetRepository(
     }
 
     override suspend fun logout() {
-        remoteDataSource.logout()
+        interfaceRemote.logout()
         localDataSource.clearAll()
     }
 
     override fun getCachedProfile() = localDataSource.getProfile()
     override fun getProfileLastUpdated() = "Local"
     override suspend fun fetchProfile(): Result<AlumnoProfile> {
-        return safeRemoteCall { remoteDataSource.getAlumno() }
+        return safeRemoteCall { interfaceRemote.getAlumno() }
             .onSuccess { localDataSource.saveProfile(it) }
     }
 
     override fun getCachedCarga() = localDataSource.getCarga()
     override fun getCargaLastUpdated() = "Local"
     override suspend fun fetchCarga(): Result<List<CargaItem>> {
-        return safeRemoteCall { remoteDataSource.getCargaAcademicaByAlumno() }
+        return safeRemoteCall { interfaceRemote.getCargaAcademicaByAlumno() }
             .onSuccess { if (it.isNotEmpty()) localDataSource.saveCarga(it) }
     }
 
     override fun getCachedKardex() = localDataSource.getKardex()
     override fun getKardexLastUpdated() = "Local"
     override suspend fun fetchKardex(lineamiento: Int): Result<List<KardexItem>> {
-        return safeRemoteCall { remoteDataSource.getAllKardexConPromedioByAlumno(lineamiento) }
+        return safeRemoteCall { interfaceRemote.getAllKardexConPromedioByAlumno(lineamiento) }
             .onSuccess { if (it.isNotEmpty()) localDataSource.saveKardex(it) }
     }
 
     override fun getCachedUnidades() = localDataSource.getCalifUnidades()
     override fun getUnidadesLastUpdated() = "Local"
     override suspend fun fetchUnidades(): Result<List<CalifUnidadItem>> {
-        return safeRemoteCall { remoteDataSource.getCalifUnidadesByAlumno() }
+        return safeRemoteCall { interfaceRemote.getCalifUnidadesByAlumno() }
             .onSuccess { if (it.isNotEmpty()) localDataSource.saveCalifUnidades(it) }
     }
 
     override fun getCachedFinales() = localDataSource.getCalifFinales()
     override fun getFinalesLastUpdated() = "Local"
     override suspend fun fetchFinales(modEducativo: Int): Result<List<CalifFinalItem>> {
-        return safeRemoteCall { remoteDataSource.getAllCalifFinalByAlumnos(modEducativo) }
+        return safeRemoteCall { interfaceRemote.getAllCalifFinalByAlumnos(modEducativo) }
             .onSuccess { if (it.isNotEmpty()) localDataSource.saveCalifFinales(it) }
     }
 }

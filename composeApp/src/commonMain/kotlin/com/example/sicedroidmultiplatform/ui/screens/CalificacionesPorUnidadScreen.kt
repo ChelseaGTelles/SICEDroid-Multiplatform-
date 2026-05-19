@@ -109,7 +109,6 @@ fun UnidadMateriaCard(item: CalifUnidadItem) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Usamos la nueva función para obtener el mapa de las unidades C1, C2...
                 item.getUnidadesMap()
                     .toList()
                     .sortedBy { it.first }

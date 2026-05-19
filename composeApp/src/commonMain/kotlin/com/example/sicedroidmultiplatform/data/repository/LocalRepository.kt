@@ -2,15 +2,14 @@ package com.example.sicedroidmultiplatform.data.repository
 
 import com.example.sicedroidmultiplatform.database.SicenetDatabase
 import com.example.sicedroidmultiplatform.data.models.*
+import com.example.sicedroidmultiplatform.database.SessionEntity
 
 class LocalRepository(
-    private val database: SicenetDatabase
-) {
-
+    database: SicenetDatabase
+) : LocalDataSource {
     private val queries = database.sicenetDatabaseQueries
 
-
-    fun saveProfile(profile: AlumnoProfile) {
+    override fun saveProfile(profile: AlumnoProfile) {
         queries.insertProfile(
             matricula = profile.matricula,
             nombre = profile.nombre,
@@ -32,219 +31,82 @@ class LocalRepository(
         )
     }
 
-    fun getProfile(): AlumnoProfile? {
-        return queries.selectProfile()
-            .executeAsOneOrNull()
-            ?.let {
-                AlumnoProfile(
-                    matricula = it.matricula,
-                    nombre = it.nombre,
-                    carrera = it.carrera,
-                    situacion = it.situacion,
-                    fechaReins = it.fechaReins,
-                    modEducativo = it.modEducativo,
-                    adeudo = it.adeudo == 1L,
-                    urlFoto = it.urlFoto,
-                    adeudoDescripcion = it.adeudoDescripcion,
-                    inscrito = it.inscrito == 1L,
-                    estatus = it.estatus,
-                    semActual = it.semActual,
-                    cdtosAcumulados = it.cdtosAcumulados,
-                    cdtosActuales = it.cdtosActuales,
-                    especialidad = it.especialidad,
-                    lineamiento = it.lineamiento
-                )
-            }
+    override fun getProfile(): AlumnoProfile? {
+        return queries.selectProfile().executeAsOneOrNull()?.let {
+            AlumnoProfile(
+                matricula = it.matricula,
+                nombre = it.nombre,
+                carrera = it.carrera,
+                situacion = it.situacion,
+                fechaReins = it.fechaReins,
+                modEducativo = it.modEducativo,
+                adeudo = it.adeudo == 1L,
+                urlFoto = it.urlFoto,
+                adeudoDescripcion = it.adeudoDescripcion,
+                inscrito = it.inscrito == 1L,
+                estatus = it.estatus,
+                semActual = it.semActual,
+                cdtosAcumulados = it.cdtosAcumulados,
+                cdtosActuales = it.cdtosActuales,
+                especialidad = it.especialidad,
+                lineamiento = it.lineamiento
+            )
+        }
     }
 
-    fun getProfileLastUpdated(): String {
-        return "Local"
+    override fun saveSession(matricula: String, contrasenia: String, tipoUsuario: String) {
+        queries.insertSession(matricula, contrasenia, tipoUsuario)
     }
 
+    override fun getSession(): SessionEntity? = queries.getSession().executeAsOneOrNull()
 
-    fun saveSession(
-        matricula: String,
-        contrasenia: String,
-        tipoUsuario: String
-    ) {
-        queries.insertSession(
-            matricula,
-            contrasenia,
-            tipoUsuario
-        )
-    }
-
-    fun getSession() =
-        queries.getSession().executeAsOneOrNull()
-
-
-    fun saveCarga(items: List<CargaItem>) {
-
+    override fun saveCarga(items: List<CargaItem>) {
         queries.clearCarga()
-
         items.forEach {
             queries.insertCarga(
-                materia = it.Materia,
-                grupo = it.Grupo,
-                docente = it.Docente,
-                creditosMateria = it.CreditosMateria.toLong(),
-                lunes = it.Lunes,
-                martes = it.Martes,
-                miercoles = it.Miercoles,
-                jueves = it.Jueves,
-                viernes = it.Viernes
+                it.Materia, it.Grupo, it.Docente, it.CreditosMateria.toLong(),
+                it.Lunes, it.Martes, it.Miercoles, it.Jueves, it.Viernes
             )
         }
     }
 
-    fun getCarga(): List<CargaItem> {
-
-        return queries.selectAllCarga()
-            .executeAsList()
-            .map {
-
-                CargaItem(
-                    Materia = it.materia,
-                    Grupo = it.grupo,
-                    Docente = it.docente,
-                    CreditosMateria = it.creditosMateria.toInt(),
-                    Lunes = it.lunes,
-                    Martes = it.martes,
-                    Miercoles = it.miercoles,
-                    Jueves = it.jueves,
-                    Viernes = it.viernes
-                )
-            }
+    override fun getCarga(): List<CargaItem> {
+        return queries.selectAllCarga().executeAsList().map {
+            CargaItem(it.materia, it.grupo, it.docente, it.creditosMateria.toInt(),
+                it.lunes, it.martes, it.miercoles, it.jueves, it.viernes)
+        }
     }
 
-    fun getCargaLastUpdated(): String {
-        return "Local"
-    }
-
-
-    fun saveKardex(items: List<KardexItem>) {
-
+    override fun saveKardex(items: List<KardexItem>) {
         queries.clearKardex()
-
-        items.forEach {
-            queries.insertKardex(
-                clvOficial = it.clvOficial,
-                materia = it.materia,
-                periodo = it.periodo,
-                promedio = it.promedio
-            )
-        }
+        items.forEach { queries.insertKardex(it.clvOficial, it.materia, it.periodo, it.promedio) }
     }
 
-    fun getKardex(): List<KardexItem> {
-
-        return queries.selectAllKardex()
-            .executeAsList()
-            .map {
-
-                KardexItem(
-                    clvOficial = it.clvOficial,
-                    materia = it.materia,
-                    periodo = it.periodo,
-                    promedio = it.promedio
-                )
-            }
+    override fun getKardex(): List<KardexItem> {
+        return queries.selectAllKardex().executeAsList().map { KardexItem(it.clvOficial, it.materia, it.periodo, it.promedio) }
     }
 
-    fun getKardexLastUpdated(): String {
-        return "Local"
-    }
-   fun saveCalifUnidades(items: List<CalifUnidadItem>) {
-
+    override fun saveCalifUnidades(items: List<CalifUnidadItem>) {
         queries.clearCalifUnidades()
+        items.forEach { queries.insertCalifUnidad(it.Materia, it.Grupo, it.C1, it.C2, it.C3, it.C4, it.C5, it.C6, it.C7, it.C8, it.C9, it.C10, it.C11, it.C12, it.C13) }
+    }
 
-        items.forEach {
-            queries.insertCalifUnidad(
-                materia = it.Materia,
-                grupo = it.Grupo,
-                c1 = it.C1,
-                c2 = it.C2,
-                c3 = it.C3,
-                c4 = it.C4,
-                c5 = it.C5,
-                c6 = it.C6,
-                c7 = it.C7,
-                c8 = it.C8,
-                c9 = it.C9,
-                c10 = it.C10,
-                c11 = it.C11,
-                c12 = it.C12,
-                c13 = it.C13
-            )
+    override fun getCalifUnidades(): List<CalifUnidadItem> {
+        return queries.selectAllCalifUnidades().executeAsList().map {
+            CalifUnidadItem(it.materia, it.grupo, it.c1, it.c2, it.c3, it.c4, it.c5, it.c6, it.c7, it.c8, it.c9, it.c10, it.c11, it.c12, it.c13)
         }
     }
 
-    fun getCalifUnidades(): List<CalifUnidadItem> {
-
-        return queries.selectAllCalifUnidades()
-            .executeAsList()
-            .map {
-
-                CalifUnidadItem(
-                    Materia = it.materia,
-                    Grupo = it.grupo,
-                    C1 = it.c1,
-                    C2 = it.c2,
-                    C3 = it.c3,
-                    C4 = it.c4,
-                    C5 = it.c5,
-                    C6 = it.c6,
-                    C7 = it.c7,
-                    C8 = it.c8,
-                    C9 = it.c9,
-                    C10 = it.c10,
-                    C11 = it.c11,
-                    C12 = it.c12,
-                    C13 = it.c13
-                )
-            }
-    }
-
-    fun getCalifUnidadesLastUpdated(): String {
-        return "Local"
-    }
-
-    fun saveCalifFinales(items: List<CalifFinalItem>) {
-
+    override fun saveCalifFinales(items: List<CalifFinalItem>) {
         queries.clearCalifFinales()
-
-        items.forEach {
-            queries.insertCalifFinal(
-                materia = it.materia,
-                calif = it.calif,
-                acred = it.acred,
-                grupo = it.grupo,
-                observaciones = it.Observaciones
-            )
-        }
+        items.forEach { queries.insertCalifFinal(it.materia, it.calif, it.acred, it.grupo, it.Observaciones) }
     }
 
-    fun getCalifFinales(): List<CalifFinalItem> {
-
-        return queries.selectAllCalifFinales()
-            .executeAsList()
-            .map {
-
-                CalifFinalItem(
-                    materia = it.materia,
-                    calif = it.calif,
-                    acred = it.acred,
-                    grupo = it.grupo,
-                    Observaciones = it.observaciones
-                )
-            }
+    override fun getCalifFinales(): List<CalifFinalItem> {
+        return queries.selectAllCalifFinales().executeAsList().map { CalifFinalItem(it.materia, it.calif, it.acred, it.grupo, it.observaciones) }
     }
 
-    fun getCalifFinalesLastUpdated(): String {
-        return "Local"
-    }
-    fun clearAll() {
-
+    override fun clearAll() {
         queries.clearProfile()
         queries.clearSession()
         queries.clearCarga()

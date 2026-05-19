@@ -11,8 +11,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.sicedroidmultiplatform.createDatabase
-import com.example.sicedroidmultiplatform.data.repository.SicenetRemoteDataSource
-import com.example.sicedroidmultiplatform.data.repository.SqlDelightLocalDataSource
+import com.example.sicedroidmultiplatform.data.repository.SicenetRemote
+import com.example.sicedroidmultiplatform.data.repository.LocalRepository
 import com.example.sicedroidmultiplatform.data.repository.SicenetRepository
 import com.example.sicedroidmultiplatform.ui.components.SicenetBottomBar
 import com.example.sicedroidmultiplatform.ui.screens.*
@@ -24,10 +24,9 @@ fun SicenetApp() {
 
     val viewModel = remember {
         val database = createDatabase()
-        
-        // Ahora usamos las nuevas clases dentro de la carpeta repository
-        val localDataSource = SqlDelightLocalDataSource(database)
-        val remoteDataSource = SicenetRemoteDataSource()
+
+        val localDataSource = LocalRepository(database)
+        val remoteDataSource = SicenetRemote()
         
         val repository = SicenetRepository(localDataSource, remoteDataSource)
         SicenetViewModel(repository)

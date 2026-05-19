@@ -1,6 +1,6 @@
 package com.example.sicedroidmultiplatform.data.repository
 
-import com.example.sicedroidmultiplatform.data.AccesoLoginRequest
+import com.example.sicedroidmultiplatform.data.models.AccesoLoginRequest
 import com.example.sicedroidmultiplatform.data.models.*
 import com.example.sicedroidmultiplatform.database.SessionEntity
 
@@ -28,4 +28,5 @@ interface InterfaceRepository {
     fun getCachedFinales(): List<CalifFinalItem>
     fun getFinalesLastUpdated(): String
     suspend fun fetchFinales(modEducativo: Int): Result<List<CalifFinalItem>>
+
 }

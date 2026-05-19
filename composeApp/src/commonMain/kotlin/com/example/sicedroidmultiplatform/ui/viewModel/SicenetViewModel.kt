@@ -4,7 +4,7 @@ import com.example.sicedroidmultiplatform.data.models.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.example.sicedroidmultiplatform.data.repository.InterfaceRepository
-import com.example.sicedroidmultiplatform.data.AccesoLoginRequest
+import com.example.sicedroidmultiplatform.data.models.AccesoLoginRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

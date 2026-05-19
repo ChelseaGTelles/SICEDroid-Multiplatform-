@@ -54,7 +54,6 @@ fun ConnectionErrorCard(message: String, onRetry: (() -> Unit)? = null) {
                     color = Color(0xFFD32F2F),
                     textAlign = TextAlign.Center
                 )
-                // Ya no mostramos el mensaje técnico (subtexto) aquí para mantenerlo limpio
             } else {
                 Text(
                     text = message,
